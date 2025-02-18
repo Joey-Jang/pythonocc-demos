@@ -31,20 +31,21 @@ from OCC.Extend.DataExchange import read_step_file
 
 def import_as_one_shape(event=None):
     shp = read_step_file(os.path.join("..", "assets", "models", "SC10 Assem v1.step"))
-    display.EraseAll()
-    display.DisplayShape(shp, update=True)
+    print(shp)
+    # display.EraseAll()
+    # display.DisplayShape(shp, update=True)
 
 
-def import_as_multiple_shapes(event=None):
-    compound = read_step_file(os.path.join("..", "assets", "models", "SC10 Assem v1.step"))
-    t = TopologyExplorer(compound)
-    display.EraseAll()
-    for solid in t.solids():
-        color = Quantity_Color(
-            random.random(), random.random(), random.random(), Quantity_TOC_RGB
-        )
-        display.DisplayColoredShape(solid, color)
-    display.FitAll()
+# def import_as_multiple_shapes(event=None):
+#     compound = read_step_file(os.path.join("..", "assets", "models", "SC10 Assem v1.step"))
+#     t = TopologyExplorer(compound)
+#     display.EraseAll()
+#     for solid in t.solids():
+#         color = Quantity_Color(
+#             random.random(), random.random(), random.random(), Quantity_TOC_RGB
+#         )
+#         display.DisplayColoredShape(solid, color)
+#     display.FitAll()
 
 
 def exit(event=None):
@@ -52,8 +53,9 @@ def exit(event=None):
 
 
 if __name__ == "__main__":
-    display, start_display, add_menu, add_function_to_menu = init_display()
-    add_menu("STEP import")
-    add_function_to_menu("STEP import", import_as_one_shape)
-    add_function_to_menu("STEP import", import_as_multiple_shapes)
-    start_display()
+    import_as_one_shape()
+    # display, start_display, add_menu, add_function_to_menu = init_display()
+    # add_menu("STEP import")
+    # add_function_to_menu("STEP import", import_as_one_shape)
+    # add_function_to_menu("STEP import", import_as_multiple_shapes)
+    # start_display()
