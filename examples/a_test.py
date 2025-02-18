@@ -1,61 +1,57 @@
-##Copyright 2010-2017 Thomas Paviot (tpaviot@gmail.com)
-##
-##This file is part of pythonOCC.
-##
-##pythonOCC is free software: you can redistribute it and/or modify
-##it under the terms of the GNU Lesser General Public License as published by
-##the Free Software Foundation, either version 3 of the License, or
-##(at your option) any later version.
-##
-##pythonOCC is distributed in the hope that it will be useful,
-##but WITHOUT ANY WARRANTY; without even the implied warranty of
-##MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-##GNU Lesser General Public License for more details.
-##
-##You should have received a copy of the GNU Lesser General Public License
-##along with pythonOCC.  If not, see <http://www.gnu.org/licenses/>.
-
-from __future__ import print_function
-
-import random
-import os
 import os.path
-import sys
 
-from OCC.Core.Quantity import Quantity_Color, Quantity_TOC_RGB
-from OCC.Display.SimpleGui import init_display
-
-from OCC.Extend.TopologyUtils import TopologyExplorer
 from OCC.Extend.DataExchange import read_step_file
-
-
-def import_as_one_shape(event=None):
-    shp = read_step_file(os.path.join("..", "assets", "models", "SC10 Assem v1.step"))
-    print(shp)
-    # display.EraseAll()
-    # display.DisplayShape(shp, update=True)
-
-
-# def import_as_multiple_shapes(event=None):
-#     compound = read_step_file(os.path.join("..", "assets", "models", "SC10 Assem v1.step"))
-#     t = TopologyExplorer(compound)
-#     display.EraseAll()
-#     for solid in t.solids():
-#         color = Quantity_Color(
-#             random.random(), random.random(), random.random(), Quantity_TOC_RGB
-#         )
-#         display.DisplayColoredShape(solid, color)
-#     display.FitAll()
-
-
-def exit(event=None):
-    sys.exit()
-
+from OCC.Core.TopAbs import TopAbs_VERTEX, TopAbs_EDGE, TopAbs_FACE
+from OCC.Core.TopExp import TopExp_Explorer
+from OCC.Core.BRep import BRep_Tool
 
 if __name__ == "__main__":
-    import_as_one_shape()
-    # display, start_display, add_menu, add_function_to_menu = init_display()
-    # add_menu("STEP import")
-    # add_function_to_menu("STEP import", import_as_one_shape)
-    # add_function_to_menu("STEP import", import_as_multiple_shapes)
-    # start_display()
+    shp = read_step_file(os.path.join("..", "assets", "models", "SC10 Assem v1.step"))
+
+    # 점(Vertex) 조회
+    vertex_explorer = TopExp_Explorer(shp, TopAbs_VERTEX)
+    while vertex_explorer.More():
+        vertex = vertex_explorer.Current()
+        # 점의 좌표 얻기
+        pnt = BRep_Tool.Pnt(vertex)
+        print(f"Vertex coordinates: ({pnt.X()}, {pnt.Y()}, {pnt.Z()})")
+        vertex_explorer.Next()
+
+    # 선(Edge) 조회
+    edge_explorer = TopExp_Explorer(shp, TopAbs_EDGE)
+    while edge_explorer.More():
+        edge = edge_explorer.Current()
+        # 여기서 edge의 속성을 조회할 수 있습니다
+        print("Found an edge")
+        edge_explorer.Next()
+
+    # 면(Face) 조회
+    face_explorer = TopExp_Explorer(shp, TopAbs_FACE)
+    while face_explorer.More():
+        face = face_explorer.Current()
+        # 여기서 face의 속성을 조회할 수 있습니다
+        print("Found a face")
+        face_explorer.Next()
+
+    # 각 요소의 개수 세기
+    vertex_count = 0
+    edge_count = 0
+    face_count = 0
+
+    vertex_explorer = TopExp_Explorer(shp, TopAbs_VERTEX)
+    edge_explorer = TopExp_Explorer(shp, TopAbs_EDGE)
+    face_explorer = TopExp_Explorer(shp, TopAbs_FACE)
+
+    while vertex_explorer.More():
+        vertex_count += 1
+        vertex_explorer.Next()
+
+    while edge_explorer.More():
+        edge_count += 1
+        edge_explorer.Next()
+
+    while face_explorer.More():
+        face_count += 1
+        face_explorer.Next()
+
+    print(f"Total counts - Vertices: {vertex_count}, Edges: {edge_count}, Faces: {face_count}")
