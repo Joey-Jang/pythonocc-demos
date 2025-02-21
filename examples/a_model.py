@@ -39,24 +39,24 @@ class DiffusionModel(nn.Module):
             nn.Linear(hidden_dim, hidden_dim)
         )
 
-        # self.net = nn.Sequential(
-        #     nn.Linear(3 + hidden_dim * 2, hidden_dim),
-        #     nn.ReLU(),
-        #     nn.Linear(hidden_dim, hidden_dim),
-        #     nn.ReLU(),
-        #     nn.Linear(hidden_dim, 3)
-        # )
         self.net = nn.Sequential(
             nn.Linear(3 + hidden_dim * 2, hidden_dim),
-            nn.LayerNorm(hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
-            nn.LayerNorm(hidden_dim),
             nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim // 2),
-            nn.ReLU(),
-            nn.Linear(hidden_dim // 2, 3)
+            nn.Linear(hidden_dim, 3)
         )
+        # self.net = nn.Sequential(
+        #     nn.Linear(3 + hidden_dim * 2, hidden_dim),
+        #     nn.LayerNorm(hidden_dim),
+        #     nn.ReLU(),
+        #     nn.Linear(hidden_dim, hidden_dim),
+        #     nn.LayerNorm(hidden_dim),
+        #     nn.ReLU(),
+        #     nn.Linear(hidden_dim, hidden_dim // 2),
+        #     nn.ReLU(),
+        #     nn.Linear(hidden_dim // 2, 3)
+        # )
 
     def forward(self, x, point_cloud, t):
         # x: noisy vertices (batch_size, num_vertices, 3)
@@ -166,12 +166,12 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
     os.makedirs(checkpoint_dir, exist_ok=True)
 
     # Learning rate scheduler 추가
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer,
-        mode='min',
-        factor=0.5,  # learning rate를 줄일 때 곱해주는 값
-        patience=5,  # 몇 epoch 동안 개선이 없을 때 lr을 줄일지
-    )
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    #     optimizer,
+    #     mode='min',
+    #     factor=0.5,  # learning rate를 줄일 때 곱해주는 값
+    #     patience=5,  # 몇 epoch 동안 개선이 없을 때 lr을 줄일지
+    # )
 
     best_loss = float('inf')
 
@@ -199,7 +199,7 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
         # Learning rate 조정 전의 값
         old_lr = optimizer.param_groups[0]['lr']
 
-        scheduler.step(avg_loss)
+        # scheduler.step(avg_loss)
 
         # Learning rate가 변경되었는지 확인
         new_lr = optimizer.param_groups[0]['lr']
@@ -211,7 +211,7 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
             'epoch': epoch,
             'model_state_dict': model.model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
-            'scheduler_state_dict': scheduler.state_dict(),
+            # 'scheduler_state_dict': scheduler.state_dict(),
             'loss': avg_loss,
         }
 
@@ -228,12 +228,14 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
         print(f"Epoch {epoch} completed. Average loss: {avg_loss:.4f}")
 
 
-def load_checkpoint(model, optimizer, scheduler, checkpoint_path):
+def load_checkpoint(model, optimizer,
+                    # scheduler,
+                    checkpoint_path):
     """저장된 체크포인트를 로드하는 함수"""
     checkpoint = torch.load(checkpoint_path)
     model.model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+    # scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
     epoch = checkpoint['epoch']
     loss = checkpoint['loss']
 
