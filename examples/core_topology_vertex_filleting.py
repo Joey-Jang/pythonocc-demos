@@ -52,10 +52,10 @@ vertB = topods_Vertex(topExp.Current())
 
 
 def vertex_fillet(cube_shp, vert):
-    # apply a fillet on incident edges on a vertex
+    # apply a fillet on incident edges on a vertices
     afillet = BRepFilletAPI_MakeFillet(cube_shp)
     cnt = 0
-    # find edges from vertex
+    # find edges from vertices
     _map = TopTools_IndexedDataMapOfShapeListOfShape()
     topexp_MapShapesAndAncestors(cube_shp, TopAbs_VERTEX, TopAbs_EDGE, _map)
     results = _map.FindFromKey(vert)

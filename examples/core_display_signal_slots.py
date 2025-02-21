@@ -15,7 +15,7 @@ QtCore, QtGui, QtWidgets, QtOpenGL = get_qt_modules()
 
 from OCC.Display.qtDisplay import qtViewer3d
 
-print("Usage: press G to find the linear properties for volume, face, edge, vertex...")
+print("Usage: press G to find the linear properties for volume, face, edge, vertices...")
 
 
 def get_occ_viewer():

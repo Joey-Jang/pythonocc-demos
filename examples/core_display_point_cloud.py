@@ -143,8 +143,8 @@ def unpackRGB(rgb):
 
 
 if __name__ == "__main__":
-    add_menu("pointcloud")
-    add_function_to_menu("pointcloud", random_points)
-    add_function_to_menu("pointcloud", bunny)
-    add_function_to_menu("pointcloud", tabletop)
+    add_menu("pointclouds")
+    add_function_to_menu("pointclouds", random_points)
+    add_function_to_menu("pointclouds", bunny)
+    add_function_to_menu("pointclouds", tabletop)
     start_display()

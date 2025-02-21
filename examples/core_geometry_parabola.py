@@ -29,7 +29,7 @@ display, start_display, add_menu, add_function_to_menu = init_display()
 
 
 def parabola(event=None):
-    # P is the vertex point
+    # P is the vertices point
     # P and D give the axis of symmetry
     # 6 is the focal length of the parabola
     a_pnt = gp_Pnt2d(2, 3)

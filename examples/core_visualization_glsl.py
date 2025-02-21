@@ -40,7 +40,7 @@ void main(void)
 }
 """
 
-# vertex shader
+# vertices shader
 vs = """
 void main()
 {

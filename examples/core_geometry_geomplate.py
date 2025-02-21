@@ -119,7 +119,7 @@ def geom_plate(event=None):
 
 
 # ============================================================================
-# Find a surface such that the radius at the vertex is n
+# Find a surface such that the radius at the vertices is n
 # ============================================================================
 
 

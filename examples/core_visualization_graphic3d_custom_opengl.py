@@ -62,7 +62,7 @@ def draw_lines(pnt_list, nr_of_points, display):
     ----------
 
     pnt_list: list of (x,y,z) tuples
-        vertex list
+        vertices list
 
     display: qtViewer3d
 

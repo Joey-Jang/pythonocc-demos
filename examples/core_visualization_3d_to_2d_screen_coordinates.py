@@ -15,7 +15,7 @@
 ##You should have received a copy of the GNU Lesser General Public License
 ##along with pythonOCC.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Select a vertex, and you'll see both 3d and 2d screen
+""" Select a vertices, and you'll see both 3d and 2d screen
 coordinates in the console.
 """
 
@@ -26,7 +26,7 @@ from OCC.Extend.DataExchange import read_step_file
 
 
 def vertex_clicked(shp, *kwargs):
-    """This function is called whenever a vertex is selected"""
+    """This function is called whenever a vertices is selected"""
     for shape in shp:  # this should be a TopoDS_Vertex
         print("Face selected: ", shape)
         v = topods_Vertex(shape)

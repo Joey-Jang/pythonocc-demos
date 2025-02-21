@@ -42,7 +42,7 @@ def edge(event=None):
     Elips = gp_Elips(gp_Ax2(gp_Pnt(10, 0, 0), gp_Dir(1, 1, 1)), 60, 30)
     RedEdge = BRepBuilderAPI_MakeEdge(Elips, 0, math.pi / 2)
 
-    # The green edge and the both extreme vertex
+    # The green edge and the both extreme vertices
     P1 = gp_Pnt(-15, 200, 10)
     P2 = gp_Pnt(5, 204, 0)
     P3 = gp_Pnt(15, 200, 0)

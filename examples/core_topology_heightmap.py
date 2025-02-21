@@ -118,16 +118,16 @@ def heightmap_from_image(event=None):
     for i in range(1, width):
         for j in range(1, height):
             # all 3 RGB values are equal, just take the first one
-            # vertex 1
+            # vertices 1
             height_value = heightmap.getpixel((i - 1, j - 1))[0]
             v1 = gp_Pnt(i, j, float(height_value) / 10)
-            # vertex 2
+            # vertices 2
             height_value = heightmap.getpixel((i, j - 1))[0]
             v2 = gp_Pnt(i + 1, j, float(height_value) / 10)
-            # vertex 3
+            # vertices 3
             height_value = heightmap.getpixel((i, j))[0]
             v3 = gp_Pnt(i + 1, j + 1, float(height_value) / 10)
-            # vertex 4
+            # vertices 4
             height_value = heightmap.getpixel((i - 1, j))[0]
             v4 = gp_Pnt(i, j + 1, float(height_value) / 10)
             # boundaries
