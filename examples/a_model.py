@@ -171,7 +171,6 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
         mode='min',
         factor=0.5,  # learning rate를 줄일 때 곱해주는 값
         patience=5,  # 몇 epoch 동안 개선이 없을 때 lr을 줄일지
-        verbose=True  # learning rate 변경 시 출력
     )
 
     best_loss = float('inf')
@@ -197,8 +196,15 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
         # 에포크 평균 손실 계산
         avg_loss = sum(epoch_losses) / len(epoch_losses)
 
-        # Learning rate 조정
+        # Learning rate 조정 전의 값
+        old_lr = optimizer.param_groups[0]['lr']
+
         scheduler.step(avg_loss)
+
+        # Learning rate가 변경되었는지 확인
+        new_lr = optimizer.param_groups[0]['lr']
+        if new_lr != old_lr:
+            print(f"Learning rate changed from {old_lr} to {new_lr}")
 
         # 모델 저장
         checkpoint = {
