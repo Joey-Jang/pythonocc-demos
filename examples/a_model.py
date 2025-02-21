@@ -172,7 +172,7 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
                 print(f"Epoch {epoch}, Batch {batch_idx}, "
                       f"Total Loss: {losses['total_loss']:.4f}, "
                       f"Noise Loss: {losses['noise_loss']:.4f}, "
-                      f"Chamfer Loss: {losses['chamfer_loss']:.4f}")
+                      f"Chamfer Loss: {losses['chamfer_loss'][0].item():.4f}")
 
         # 에포크 평균 손실 계산
         avg_loss = sum(epoch_losses) / len(epoch_losses)
