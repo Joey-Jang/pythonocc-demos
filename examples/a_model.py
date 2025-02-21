@@ -109,6 +109,9 @@ class VertexExtractionDiffusion:
         denoised_vertices = (noisy_vertices - torch.sqrt(1 - alpha_bar_t) * noise_pred) / torch.sqrt(alpha_bar_t)
         chamfer_loss = chamfer_distance(denoised_vertices, point_cloud)
 
+        print(type(chamfer_loss))  # 타입 확인
+        print(chamfer_loss)  # 실제 값 확인
+
         if isinstance(chamfer_loss, torch.Tensor):
             chamfer_loss = chamfer_loss.item()
         elif isinstance(chamfer_loss, list):
