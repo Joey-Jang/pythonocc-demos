@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from pytorch3d.loss import chamfer_distance
+
 from a_dataloader import create_dataloader
 
 
@@ -89,25 +91,6 @@ class VertexExtractionDiffusion:
                   torch.sqrt(1 - alpha_bar_t).view(-1, 1, 1) * noise
         return noisy_x, noise
 
-    def chamfer_distance(self, x, y):
-        # x: (batch_size, n, 3)
-        # y: (batch_size, m, 3)
-
-        # Expand dimensions for broadcasting
-        x = x.unsqueeze(2)  # (batch_size, n, 1, 3)
-        y = y.unsqueeze(1)  # (batch_size, 1, m, 3)
-
-        # Compute pairwise distances
-        dist = torch.sum((x - y) ** 2, dim=-1)  # (batch_size, n, m)
-
-        # Compute minimum distances in both directions
-        dist_x_to_y = torch.min(dist, dim=2)[0]  # (batch_size, n)
-        dist_y_to_x = torch.min(dist, dim=1)[0]  # (batch_size, m)
-
-        # Average the distances
-        chamfer_dist = torch.mean(dist_x_to_y, dim=1) + torch.mean(dist_y_to_x, dim=1)
-        return torch.mean(chamfer_dist)
-
     def training_step(self, vertices, point_cloud):
         batch_size = vertices.shape[0]
         t = torch.randint(0, self.num_timesteps, (batch_size,))
@@ -124,7 +107,7 @@ class VertexExtractionDiffusion:
         # Calculate Chamfer distance between denoised vertices and point cloud
         alpha_bar_t = self.alpha_bar[t].view(-1, 1, 1)
         denoised_vertices = (noisy_vertices - torch.sqrt(1 - alpha_bar_t) * noise_pred) / torch.sqrt(alpha_bar_t)
-        chamfer_loss = self.chamfer_distance(denoised_vertices, point_cloud)
+        chamfer_loss = chamfer_distance(denoised_vertices, point_cloud)
 
         # Combine losses
         total_loss = noise_loss + 0.1 * chamfer_loss
