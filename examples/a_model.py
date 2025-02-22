@@ -127,15 +127,16 @@ class VertexExtractionDiffusion:
         # Calculate Chamfer distance between denoised vertices and point cloud
         alpha_bar_t = self.alpha_bar[t].view(-1, 1, 1)
         denoised_vertices = (noisy_vertices - torch.sqrt(1 - alpha_bar_t) * noise_pred) / torch.sqrt(alpha_bar_t)
-        chamfer_loss, _ = chamfer_distance(denoised_vertices, vertices)
+        # chamfer_loss, _ = chamfer_distance(denoised_vertices, vertices)
 
-        normalized_chamfer_loss = chamfer_loss / vertices.shape[1]  # 정점 수로 정규화
-        total_loss = noise_loss + 0.1 * normalized_chamfer_loss  # 가중치 상향 조정
+        # normalized_chamfer_loss = chamfer_loss / vertices.shape[1]  # 정점 수로 정규화
+        total_loss = noise_loss
+                      # + 0.1 * normalized_chamfer_loss)  # 가중치 상향 조정
 
         return {
             'total_loss': total_loss,
             'noise_loss': noise_loss,
-            'chamfer_loss': chamfer_loss
+            # 'chamfer_loss': chamfer_loss
         }
 
     @torch.no_grad()
@@ -201,7 +202,7 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
 
             # Exponential moving average로 loss 변화 추적
             running_avg_loss = 0.95 * running_avg_loss + 0.05 * losses['total_loss'].item()
-            running_avg_chamfer = 0.95 * running_avg_chamfer + 0.05 * losses['chamfer_loss'].item()
+            # running_avg_chamfer = 0.95 * running_avg_chamfer + 0.05 * losses['chamfer_loss'].item()
 
             if batch_idx % 100 == 0:
                 print(f"Running avg loss: {running_avg_loss:.4f}, Running avg chamfer: {running_avg_chamfer:.4f}")
@@ -221,7 +222,7 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
                 print(f"Epoch {epoch}, Batch {batch_idx}, "
                       f"Total Loss: {losses['total_loss']:.4f}, "
                       f"Noise Loss: {losses['noise_loss']:.4f}, "
-                      f"Chamfer Loss: {losses['chamfer_loss']:.4f}, "
+                      # f"Chamfer Loss: {losses['chamfer_loss']:.4f}, "
                       f"Learning Rate: {optimizer.param_groups[0]['lr']:.2e}")
 
         # 에포크 평균 손실 계산
