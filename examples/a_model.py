@@ -118,7 +118,7 @@ class VertexExtractionDiffusion:
         # Calculate Chamfer distance between denoised vertices and point cloud
         alpha_bar_t = self.alpha_bar[t].view(-1, 1, 1)
         denoised_vertices = (noisy_vertices - torch.sqrt(1 - alpha_bar_t) * noise_pred) / torch.sqrt(alpha_bar_t)
-        chamfer_loss, _ = chamfer_distance(denoised_vertices, point_cloud)
+        chamfer_loss, _ = chamfer_distance(denoised_vertices, vertices)
 
         total_loss = noise_loss + 1e-6 * chamfer_loss
 
