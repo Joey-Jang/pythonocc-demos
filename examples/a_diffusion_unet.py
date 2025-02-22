@@ -12,7 +12,7 @@ class DiffusionUNet(nn.Module):
     def __init__(self, input_dim=3, hidden_dim=128):
         super(DiffusionUNet, self).__init__()
 
-        self.encoder1 = nn.Linear(input_dim, hidden_dim)
+        self.encoder1 = nn.Linear(input_dim + 1, hidden_dim)  # Correct input dimension
         self.encoder2 = nn.Linear(hidden_dim, hidden_dim)
 
         self.bottleneck = nn.Linear(hidden_dim, hidden_dim)
@@ -25,7 +25,8 @@ class DiffusionUNet(nn.Module):
         t_emb = t.view(-1, 1, 1).expand(-1, x.shape[1], 1)  # Expand timestep dimension
         x = torch.cat((x, t_emb), dim=-1)  # Concatenate timestep to input
 
-        x = x.view(-1, 4)
+        x = x.view(-1, x.shape[-1])  # Flatten batch & points for Linear layer
+
         x = F.relu(self.encoder1(x))
         x = F.relu(self.encoder2(x))
 
@@ -34,8 +35,8 @@ class DiffusionUNet(nn.Module):
         x = F.relu(self.decoder1(x))
         x = self.decoder2(x)  # No activation, since we predict continuous values
 
-        x = x.view(-1, 1024, 3)
-        
+        x = x.view(-1, 1024, 3)  # Reshape back to original form
+
         return x
 
 
