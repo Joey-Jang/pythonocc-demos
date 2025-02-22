@@ -208,7 +208,7 @@ if __name__ == "__main__":
         num_points=1024
     )
     # pad_collate_fn을 써도 되지만, vertices는 안 쓸 거라서 문제가 없으면 그냥 써도 됨.
-    dataloader = DataLoader(dataset, batch_size=2, shuffle=True, collate_fn=pad_collate_fn)
+    dataloader = DataLoader(dataset, batch_size=3, shuffle=True, collate_fn=pad_collate_fn)
 
     # (3) 모델/옵티마 준비
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -219,7 +219,7 @@ if __name__ == "__main__":
     train_diffusion_model(model, dataloader, diffusion, optimizer, device=device, num_epochs=10)
 
     # (5) 샘플링
-    sampled_points = sample_diffusion_model(model, diffusion, device=device,
-                                            checkpoint_path="checkpoints/model_epoch_10.pth", batch_size=1,
-                                            num_points=1024)
-    print("Sampled shape:", sampled_points.shape)
+    # sampled_points = sample_diffusion_model(model, diffusion, device=device,
+    #                                         checkpoint_path="checkpoints/model_epoch_10.pth", batch_size=1,
+    #                                         num_points=1024)
+    # print("Sampled shape:", sampled_points.shape)
