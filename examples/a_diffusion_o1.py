@@ -173,9 +173,9 @@ def train_diffusion_model(model, dataloader, diffusion, optimizer, device='cpu',
         print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {avg_loss:.4f}")
 
         # Checkpoint 저장
-        ckpt_path = os.path.join(checkpoint_dir, f"model_epoch_{epoch + 1}.pth")
-        torch.save(model.state_dict(), ckpt_path)
-        print(f"Checkpoint saved: {ckpt_path}")
+        # ckpt_path = os.path.join(checkpoint_dir, f"model_epoch_{epoch + 1}.pth")
+        # torch.save(model.state_dict(), ckpt_path)
+        # print(f"Checkpoint saved: {ckpt_path}")
 
 
 ########################################
