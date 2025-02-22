@@ -13,28 +13,32 @@ from a_dataset import PointCloudDataset, pad_collate_fn  # vertices/mask는 무�
 # 1. Diffusion 클래스 (노이즈 추가, 샘플링)
 ########################################
 class Diffusion:
-    def __init__(self, num_timesteps=50, beta_start=0.0001, beta_end=0.02):
-        """
-        간단히 선형 스케줄을 이용해 베타를 정의하고,
-        alpha_bar(누적 곱)을 계산.
-        """
+    def __init__(self, num_timesteps=1000, beta_start=0.0001, beta_end=0.02, device='cuda'):
         self.num_timesteps = num_timesteps
-        self.beta = torch.linspace(beta_start, beta_end, num_timesteps)  # (T,)
-        self.alpha = 1.0 - self.beta
-        self.alpha_bar = torch.cumprod(self.alpha, dim=0)  # (T,)
+        self.device = device
+
+        beta = torch.linspace(beta_start, beta_end, num_timesteps)
+        alpha = 1.0 - beta
+        alpha_bar = torch.cumprod(alpha, dim=0)
+
+        # GPU로 옮기기
+        self.alpha_bar = alpha_bar.to(device)
+        self.alpha = alpha.to(device)
+        self.beta = beta.to(device)
 
     def add_noise(self, x0, t):
         """
-        x0: (B, N, 3) 원본 포인트 클라우드
-        t:  (B,)       타임스텝 (long)
-        return: (x_t, noise)
+        x0: (B, N, 3)
+        t:  (B,) long
         """
-        device = x0.device
+        # 혹시 t가 다른 디바이스라면 통일
+        t = t.to(self.alpha_bar.device)
+        x0 = x0.to(self.alpha_bar.device)
+
         batch_size = x0.shape[0]
-
         noise = torch.randn_like(x0)  # (B, N, 3)
-        alpha_bar_t = self.alpha_bar[t].to(device).view(batch_size, 1, 1)  # (B,1,1)
 
+        alpha_bar_t = self.alpha_bar[t].view(batch_size, 1, 1)  # (B,1,1)
         x_t = torch.sqrt(alpha_bar_t) * x0 + torch.sqrt(1 - alpha_bar_t) * noise
         return x_t, noise
 
