@@ -188,9 +188,9 @@ def train_diffusion_model(model, diffusion, dataloader, optimizer, device="cpu",
         print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
 
         # checkpoint
-        ckpt_path = os.path.join(checkpoint_dir, f"model_epoch_{epoch+1}.pth")
-        torch.save(model.state_dict(), ckpt_path)
-        print(f"Checkpoint saved: {ckpt_path}")
+        # ckpt_path = os.path.join(checkpoint_dir, f"model_epoch_{epoch+1}.pth")
+        # torch.save(model.state_dict(), ckpt_path)
+        # print(f"Checkpoint saved: {ckpt_path}")
 
 ###############################################################
 # 샘플링 함수
@@ -221,7 +221,7 @@ if __name__ == "__main__":
 
     # 3) 모델 & 옵티마
     model = DiffusionUNet(hidden_dim=128)
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     # 4) 학습 (사용자 데이터셋이 준비된 상태 가정)
     train_diffusion_model(model, diffusion, dataloader, optimizer, device=device, num_epochs=100)
