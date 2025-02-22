@@ -130,7 +130,7 @@ class VertexExtractionDiffusion:
         chamfer_loss, _ = chamfer_distance(denoised_vertices, vertices)
 
         normalized_chamfer_loss = chamfer_loss / vertices.shape[1]  # 정점 수로 정규화
-        total_loss = noise_loss + 0.5 * normalized_chamfer_loss  # 가중치 상향 조정
+        total_loss = noise_loss + 0.1 * normalized_chamfer_loss  # 가중치 상향 조정
 
         return {
             'total_loss': total_loss,
@@ -178,7 +178,7 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
     # OneCycleLR 스케줄러 설정
     scheduler = torch.optim.lr_scheduler.OneCycleLR(
         optimizer,
-        max_lr=5e-8,  # 최대 learning rate 감소
+        max_lr=5e-9,  # 최대 learning rate 감소
         steps_per_epoch=len(train_loader),
         epochs=num_epochs,
         pct_start=0.2,  # warmup 비율 감소
@@ -271,7 +271,7 @@ if __name__ == "__main__":
     # optimizer = torch.optim.Adam(diffusion.model.parameters(), lr=1e-4)
     optimizer = torch.optim.AdamW(
         diffusion.model.parameters(),
-        lr=5e-5,  # 초기 learning rate 감소
+        lr=5e-9,  # 초기 learning rate 감소
         weight_decay=0.1,  # weight decay 증가
         betas=(0.9, 0.999)
     )
