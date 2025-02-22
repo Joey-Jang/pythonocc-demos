@@ -22,7 +22,7 @@ class DiffusionUNet(nn.Module):
 
     def forward(self, x, t):
         """ Forward pass with timestep embedding """
-        t_emb = t.unsqueeze(-1).expand(-1, x.shape[1])  # Timestep embedding
+        t_emb = t.unsqueeze(-1).expand(-1, x.shape[1], 1)  # Expand timestep dimension
         x = torch.cat((x, t_emb), dim=-1)  # Concatenate timestep to input
 
         x = F.relu(self.encoder1(x))
