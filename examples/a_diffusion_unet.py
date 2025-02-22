@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
     # Initialize model and optimizer
     model = DiffusionUNet()
-    optimizer = torch.optim.Adam(model.parameters(), lr=5e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     # Train the model
     train_diffusion_model(model, dataloader, optimizer, num_epochs=100)
