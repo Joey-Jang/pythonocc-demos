@@ -51,7 +51,9 @@ def chamfer_distance(x, y, mask):
 
     dist = torch.norm(x_expand - y_expand, dim=-1)  # Compute pairwise distance
     min_dist_x = torch.min(dist, dim=2)[0]
-    min_dist_y = torch.min(dist, dim=1)[0] * mask
+    min_dist_y = torch.min(dist, dim=1)[0]
+    mask = mask.unsqueeze(-1).expand_as(min_dist_y)  # Ensure mask has same shape
+    min_dist_y = min_dist_y * mask
 
     return min_dist_x.mean() + min_dist_y.mean()
 
