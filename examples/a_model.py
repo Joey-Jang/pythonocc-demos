@@ -167,14 +167,18 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
     os.makedirs(checkpoint_dir, exist_ok=True)
 
     # Learning rate scheduler 추가
-    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-    #     optimizer,
-    #     mode='min',
-    #     factor=0.5,  # learning rate를 줄일 때 곱해주는 값
-    #     patience=5,  # 몇 epoch 동안 개선이 없을 때 lr을 줄일지
-    # )
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode='min',
+        factor=0.5,
+        patience=3,  # patience 줄임
+        min_lr=1e-6  # 최소 learning rate 설정
+    )
 
     best_loss = float('inf')
+
+    running_avg_loss = 0.0
+    running_avg_chamfer = 0.0
 
     for epoch in range(num_epochs):
         epoch_losses = []
@@ -182,8 +186,20 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
         for batch_idx, (vertices, point_cloud) in enumerate(train_loader):
             optimizer.zero_grad()
             losses = model.training_step(vertices, point_cloud)
+
+            # Exponential moving average로 loss 변화 추적
+            running_avg_loss = 0.95 * running_avg_loss + 0.05 * losses['total_loss'].item()
+            running_avg_chamfer = 0.95 * running_avg_chamfer + 0.05 * losses['chamfer_loss'].item()
+
+            if batch_idx % 100 == 0:
+                print(f"Running avg loss: {running_avg_loss:.4f}, Running avg chamfer: {running_avg_chamfer:.4f}")
+
             total_loss = losses['total_loss']
             total_loss.backward()
+
+            # Gradient clipping 추가
+            torch.nn.utils.clip_grad_norm_(model.model.parameters(), max_norm=1.0)
+
             optimizer.step()
 
             epoch_losses.append(total_loss.item())
@@ -200,7 +216,7 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
         # Learning rate 조정 전의 값
         old_lr = optimizer.param_groups[0]['lr']
 
-        # scheduler.step(avg_loss)
+        scheduler.step(avg_loss)
 
         # Learning rate가 변경되었는지 확인
         new_lr = optimizer.param_groups[0]['lr']
@@ -212,7 +228,7 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
             'epoch': epoch,
             'model_state_dict': model.model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
-            # 'scheduler_state_dict': scheduler.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
             'loss': avg_loss,
         }
 
