@@ -264,3 +264,17 @@ if __name__ == "__main__":
         batch_size=2,  # Smaller batch size
         num_workers=1
     )
+
+    # Train model
+    # 학습 시작
+    train_model(diffusion, train_loader, optimizer,
+                num_epochs=100,
+                checkpoint_dir='checkpoints')
+
+    # 저장된 모델 로드
+    # epoch, loss = load_checkpoint(diffusion, optimizer,
+    #                               'checkpoints/best_model.pt')
+
+    # Sample vertices from point cloud
+    # point_cloud = ...
+    # vertices = diffusion.sample(point_cloud)
