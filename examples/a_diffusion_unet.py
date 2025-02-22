@@ -78,9 +78,9 @@ def train_diffusion_model(model, dataloader, optimizer, num_epochs=10, checkpoin
         print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {total_loss / len(dataloader):.4f}")
 
         # Save checkpoint
-        checkpoint_path = os.path.join(checkpoint_dir, f"model_epoch_{epoch + 1}.pth")
-        torch.save(model.state_dict(), checkpoint_path)
-        print(f"Checkpoint saved: {checkpoint_path}")
+        # checkpoint_path = os.path.join(checkpoint_dir, f"model_epoch_{epoch + 1}.pth")
+        # torch.save(model.state_dict(), checkpoint_path)
+        # print(f"Checkpoint saved: {checkpoint_path}")
 
 
 # Define model evaluation
