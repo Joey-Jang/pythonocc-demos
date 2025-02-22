@@ -49,8 +49,8 @@ def custom_collate_fn(batch):
 
 
 # 데이터셋 경로 설정
-pointcloud_dir = "path_to_pointclouds"
-vertices_dir = "path_to_vertices"
+pointcloud_dir = "pointclouds"
+vertices_dir = "vertices"
 
 # 데이터셋 로드
 dataset = PointCloudDataset(pointcloud_dir, vertices_dir)
