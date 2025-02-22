@@ -63,6 +63,10 @@ def train_diffusion_model(model, dataloader, optimizer, num_epochs=10, checkpoin
             t = torch.randint(0, 1000, (point_cloud.shape[0],), dtype=torch.long)  # Random timestep
             point_cloud_noised, _ = diffusion.add_noise(point_cloud, t)  # Apply noise
 
+            # 🔹 vertices를 텐서로 변환
+            vertices = torch.stack(vertices) if isinstance(vertices, list) else vertices
+            vertices = vertices.to(point_cloud.device)  # GPU/CPU 맞추기
+
             optimizer.zero_grad()
             predicted_vertices = model(point_cloud_noised, t)
             loss = chamfer_distance(predicted_vertices, vertices)
