@@ -53,9 +53,10 @@ def chamfer_distance(x, y, mask):
     min_dist_x = torch.min(dist, dim=2)[0]
     min_dist_y = torch.min(dist, dim=1)[0]
 
-    print(mask.shape, min_dist_x.shape, min_dist_y.shape)
-
-    mask = mask.unsqueeze(-1) if mask.dim() == 2 else mask  # Ensure correct dimension
+    mask = mask[:, :min_dist_y.shape[1]]
+    if mask.dim() < min_dist_y.dim():
+        mask = mask.unsqueeze(-1)
+    mask = mask.expand_as(min_dist_y)  # Ensure correct dimension
     mask = mask[:, :min_dist_y.shape[1]].expand_as(min_dist_y)  # Expand mask to match min_dist_y shape
     min_dist_y = min_dist_y * mask  # Apply mask
 
