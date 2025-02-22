@@ -76,7 +76,7 @@ def train_diffusion_model(model, dataloader, optimizer, num_epochs=10, checkpoin
 
             optimizer.zero_grad()
             predicted_vertices = model(point_cloud_noised, t)
-            loss = chamfer_distance(predicted_vertices, vertices)
+            loss = chamfer_distance(predicted_vertices, vertices, mask)
             loss.backward()
 
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)  # 🔹 Gradient Clipping 추가
