@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import os
 from torch.utils.data import DataLoader
 
-from examples.a_dataset import PointCloudDataset, PointCloudOnlyDataset
+from a_dataset import PointCloudDataset, PointCloudOnlyDataset
 
 
 ########################################################
