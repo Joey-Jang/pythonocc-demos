@@ -2,12 +2,32 @@ import torch
 import numpy as np
 import os
 
+import torch
+import numpy as np
+import os
+import open3d as o3d
+
+
+def farthest_point_sampling(points, num_samples):
+    """
+    Farthest Point Sampling (FPS)을 이용해 포인트 클라우드에서 num_samples 개의 포인트 선택.
+    """
+    N, _ = points.shape
+    sampled_indices = np.zeros(num_samples, dtype=np.int64)
+    distances = np.ones(N) * np.inf  # 모든 점까지의 거리 초기화
+    farthest = np.random.randint(0, N)  # 랜덤한 점 하나 선택
+
+    for i in range(num_samples):
+        sampled_indices[i] = farthest
+        centroid = points[farthest, :]
+        dist = np.linalg.norm(points - centroid, axis=1)
+        distances = np.minimum(distances, dist)  # 가장 가까운 거리 업데이트
+        farthest = np.argmax(distances)  # 가장 먼 점 선택
+
+    return points[sampled_indices]
+
 
 class PointCloudDataset(torch.utils.data.Dataset):
-    """
-    포인트 클라우드와 정점 데이터셋을 PyTorch Dataset 형식으로 변환
-    """
-
     def __init__(self, pointcloud_dir, vertices_dir, num_points=1024):
         self.pointcloud_dir = pointcloud_dir
         self.vertices_dir = vertices_dir
@@ -26,10 +46,9 @@ class PointCloudDataset(torch.utils.data.Dataset):
         point_cloud = np.load(pointcloud_path)  # (N, 3)
         vertices = np.load(vertices_path)  # (M, 3)
 
-        # 포인트 클라우드 샘플링 (num_points 크기로 맞추기)
+        # FPS로 1024개 샘플링
         if len(point_cloud) > self.num_points:
-            indices = np.random.choice(len(point_cloud), self.num_points, replace=False)
-            point_cloud = point_cloud[indices]
+            point_cloud = farthest_point_sampling(point_cloud, self.num_points)
 
         # 텐서 변환
         point_cloud = torch.tensor(point_cloud, dtype=torch.float32)
