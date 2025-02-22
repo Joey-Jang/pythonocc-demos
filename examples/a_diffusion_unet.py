@@ -59,7 +59,7 @@ def train_diffusion_model(model, dataloader, optimizer, num_epochs=10, checkpoin
     model.train()
     for epoch in range(num_epochs):
         total_loss = 0
-        for point_cloud, vertices in dataloader:
+        for point_cloud, vertices, mask in dataloader:
             t = torch.randint(0, 1000, (point_cloud.shape[0],), dtype=torch.long)  # Random timestep
             point_cloud_noised, _ = diffusion.add_noise(point_cloud, t)  # Apply noise
 
@@ -90,7 +90,7 @@ def evaluate_diffusion_model(model, dataloader, checkpoint_path):
     model.eval()
 
     with torch.no_grad():
-        for point_cloud, vertices in dataloader:
+        for point_cloud, vertices, mask in dataloader:
             t = torch.randint(0, 1000, (point_cloud.shape[0],), dtype=torch.long)  # Random timestep
             point_cloud_noised, _ = diffusion.add_noise(point_cloud, t)  # Apply noise
             predicted_vertices = model(point_cloud_noised, t)

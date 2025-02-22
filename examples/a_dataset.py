@@ -105,7 +105,7 @@ if __name__ == '__main__':
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=pad_collate_fn)
 
     # 데이터 확인
-    for point_cloud, vertices in dataloader:
+    for point_cloud, vertices, mask in dataloader:
         print(f"Point Cloud Shape: {point_cloud.shape}")  # (Batch, 1024, 3)
         print(f"Vertices Batch Size: {len(vertices)}")  # 리스트 길이 확인
         print(f"First Sample Vertices Shape: {vertices[0].shape}")  # 각 샘플의 정점 개수 확인
