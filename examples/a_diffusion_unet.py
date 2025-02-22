@@ -13,15 +13,15 @@ class DiffusionUNet(nn.Module):
         super(DiffusionUNet, self).__init__()
 
         self.encoder1 = nn.Linear(input_dim + 1, hidden_dim)
-        # self.bn1 = nn.BatchNorm1d(hidden_dim)  # 🔹 BatchNorm 추가
+        self.bn1 = nn.BatchNorm1d(hidden_dim)  # 🔹 BatchNorm 추가
         self.encoder2 = nn.Linear(hidden_dim, hidden_dim)
-        # self.bn2 = nn.BatchNorm1d(hidden_dim)  # 🔹 BatchNorm 추가
+        self.bn2 = nn.BatchNorm1d(hidden_dim)  # 🔹 BatchNorm 추가
 
         self.bottleneck = nn.Linear(hidden_dim, hidden_dim)
-        # self.bn_bottleneck = nn.BatchNorm1d(hidden_dim)  # 🔹 BatchNorm 추가
+        self.bn_bottleneck = nn.BatchNorm1d(hidden_dim)  # 🔹 BatchNorm 추가
 
         self.decoder1 = nn.Linear(hidden_dim, hidden_dim)
-        # self.bn3 = nn.BatchNorm1d(hidden_dim)  # 🔹 BatchNorm 추가
+        self.bn3 = nn.BatchNorm1d(hidden_dim)  # 🔹 BatchNorm 추가
         self.decoder2 = nn.Linear(hidden_dim, input_dim)
 
     def forward(self, x, t):
@@ -31,17 +31,12 @@ class DiffusionUNet(nn.Module):
 
         x = x.view(-1, x.shape[-1])  # Flatten batch & points
 
-        # x = F.relu(self.bn1(self.encoder1(x)))  # 🔹 BatchNorm 적용
-        # x = F.relu(self.bn2(self.encoder2(x)))
-        x = F.relu(self.encoder1(x))
-        x = F.relu(self.encoder2(x))
+        x = F.relu(self.bn1(self.encoder1(x)))  # 🔹 BatchNorm 적용
+        x = F.relu(self.bn2(self.encoder2(x)))
 
-        # x = F.relu(self.bn_bottleneck(self.bottleneck(x)))
-        x = F.relu(self.bottleneck(x))
+        x = F.relu(self.bn_bottleneck(self.bottleneck(x)))
 
-        # x = F.relu(self.bn3(self.decoder1(x)))
-        x = F.relu(self.decoder1(x))
-        
+        x = F.relu(self.bn3(self.decoder1(x)))
         x = self.decoder2(x)
 
         x = x.view(-1, 1024, 3)  # Reshape back
