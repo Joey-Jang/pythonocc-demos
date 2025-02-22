@@ -247,56 +247,20 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
         print(f"Epoch {epoch} completed. Average loss: {avg_loss:.4f}")
 
 
-def load_checkpoint(model, optimizer,
-                    # scheduler,
-                    checkpoint_path):
-    """저장된 체크포인트를 로드하는 함수"""
-    checkpoint = torch.load(checkpoint_path)
-    model.model.load_state_dict(checkpoint['model_state_dict'])
-    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    # scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-    epoch = checkpoint['epoch']
-    loss = checkpoint['loss']
-
-    print(f"Loaded checkpoint from epoch {epoch} with loss {loss:.4f}")
-    return epoch, loss
-
-
-# Usage example
+# Usage
 if __name__ == "__main__":
-    # Initialize model
     diffusion = VertexExtractionDiffusion(num_vertices=5000)
-    # optimizer = torch.optim.Adam(diffusion.model.parameters(), lr=1e-4)
+
     optimizer = torch.optim.AdamW(
         diffusion.model.parameters(),
-        lr=5e-5,  # 초기 learning rate 감소
-        weight_decay=0.1,  # weight decay 증가
+        lr=4e-6,  # Lower initial learning rate
+        weight_decay=0.01,  # Reduced weight decay
         betas=(0.9, 0.999)
     )
 
-    # Assuming you have a DataLoader with (vertices, point_cloud) pairs
-    # 데이터 디렉토리 설정
-    vertex_dir = "vertices"
-    pointcloud_dir = "pointclouds"
-
-    # DataLoader 생성
     train_loader = create_dataloader(
-        vertex_dir=vertex_dir,
-        pointcloud_dir=pointcloud_dir,
-        batch_size=3,
+        vertex_dir="vertices",
+        pointcloud_dir="pointclouds",
+        batch_size=2,  # Smaller batch size
         num_workers=1
     )
-
-    # Train model
-    # 학습 시작
-    train_model(diffusion, train_loader, optimizer,
-                num_epochs=100,
-                checkpoint_dir='checkpoints')
-
-    # 저장된 모델 로드
-    # epoch, loss = load_checkpoint(diffusion, optimizer,
-    #                               'checkpoints/best_model.pt')
-
-    # Sample vertices from point cloud
-    # point_cloud = ...
-    # vertices = diffusion.sample(point_cloud)
