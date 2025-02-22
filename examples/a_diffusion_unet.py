@@ -111,7 +111,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     # Train the model
-    train_diffusion_model(model, dataloader, optimizer, num_epochs=10)
+    train_diffusion_model(model, dataloader, optimizer, num_epochs=100)
 
     # Evaluate the model using the last checkpoint
     # checkpoint_path = "checkpoints/model_epoch_10.pth"
