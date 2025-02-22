@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
     # 디렉토리 일괄 처리
     process_directory(
-        step_dir="step",
+        step_dir="step/normalized",
         ply_dir="ply",
         output_dir="."
     )

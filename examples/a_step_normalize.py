@@ -1,8 +1,9 @@
+import math
 import os
 
 from OCC.Core.Bnd import Bnd_Box
 from OCC.Core.BRepBndLib import brepbndlib_Add
-from OCC.Core.gp import gp_Trsf, gp_Vec, gp_Pnt
+from OCC.Core.gp import gp_Trsf, gp_Vec, gp_Pnt, gp_Ax1, gp_Dir
 from OCC.Core.STEPControl import STEPControl_Writer, STEPControl_AsIs, STEPControl_Reader
 from OCC.Core.Interface import Interface_Static_SetCVal
 from OCC.Core.IFSelect import IFSelect_RetDone
@@ -11,6 +12,25 @@ from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
 from OCC.Core.Bnd import Bnd_Box
 from OCC.Core.BRepBndLib import brepbndlib_Add, brepbndlib_AddOptimal
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Transform
+
+
+def check_shape_topology(shape, label=""):
+    """
+    Shape의 토폴로지 요소들의 개수를 출력
+    """
+    from OCC.Core.TopAbs import TopAbs_VERTEX, TopAbs_EDGE, TopAbs_FACE
+    from OCC.Core.TopExp import TopExp_Explorer
+
+    explorer = TopExp_Explorer()
+
+    # Vertices 개수
+    explorer.Init(shape, TopAbs_VERTEX)
+    vertex_count = 0
+    while explorer.More():
+        vertex_count += 1
+        explorer.Next()
+
+    print(f"{label} - Vertices count: {vertex_count}")
 
 
 def save_shape(shape, filename, format='STEP'):
@@ -114,9 +134,22 @@ def normalize_shape(shape, mesh_precision=0.01):
     scale_transform = gp_Trsf()
     scale_transform.SetScale(gp_Pnt(0, 0, 0), scale)
 
+    # Z축을 중심으로 180도 회전하는 변환 생성
+    axis = gp_Ax1(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1))  # Z축
+    rotation_transform = gp_Trsf()
+    rotation_transform.SetRotation(axis, math.pi)  # 180도 = π 라디안
+
+    check_shape_topology(shape, "Original")
+
     # 변환 적용
     shape_centered = BRepBuilderAPI_Transform(shape, transform).Shape()
-    shape_normalized = BRepBuilderAPI_Transform(shape_centered, scale_transform).Shape()
+    check_shape_topology(shape_centered, "After translation")
+
+    shape_scaled = BRepBuilderAPI_Transform(shape_centered, scale_transform).Shape()
+    check_shape_topology(shape_scaled, "After scaling")
+
+    shape_normalized = BRepBuilderAPI_Transform(shape_scaled, rotation_transform).Shape()
+    check_shape_topology(shape_normalized, "After rotation")
 
     return shape_normalized
 
@@ -154,6 +187,6 @@ if __name__ == "__main__":
     xmin, ymin, zmin, xmax, ymax, zmax = result_bbox.Get()
     print(f"Normalized box bounds: ({xmin:.3f}, {ymin:.3f}, {zmin:.3f}) to ({xmax:.3f}, {ymax:.3f}, {zmax:.3f})")
 
-    # save_shape(normalized_shp, os.path.join(".", "step", "model_001_normalized.step"))
-    save_shape(normalized_shp, os.path.join(".", "step", "model_001_normalized.stl"), "STL")
+    save_shape(normalized_shp, os.path.join(".", "step", "normalized", "model_001.step"))
+    # save_shape(normalized_shp, os.path.join(".", "step", "model_001_normalized.stl"), "STL")
     print("Normalized shape has been saved in both STEP and STL formats.")

@@ -129,7 +129,7 @@ if __name__ == "__main__":
 
     # STEP 파일 읽기
     step_reader = STEPControl_Reader()
-    step_reader.ReadFile(os.path.join("..", "assets", "models", "processed", "model_003.step"))
+    step_reader.ReadFile(os.path.join(".", "step", "model_001.step"))
     step_reader.TransferRoots()
     shp = step_reader.OneShape()
 
