@@ -29,74 +29,77 @@ class PointCloudEncoder(nn.Module):
         return x
 
 
-class DiffusionModel(nn.Module):
-    def __init__(self, num_vertices=5000, hidden_dim=256):
-        super().__init__()
+class VertexExtractionDiffusion:
+    def __init__(self, num_vertices=5000, num_timesteps=1000, beta_start=1e-4, beta_end=0.02):
+        self.num_timesteps = num_timesteps
         self.num_vertices = num_vertices
-        self.encoder = PointCloudEncoder()
 
-        # Improved time embedding with wider network
-        self.time_embed = nn.Sequential(
-            nn.Linear(1, hidden_dim * 2),
-            nn.SiLU(),
-            nn.Linear(hidden_dim * 2, hidden_dim * 2)
-        )
+        # Improved noise schedule
+        self.beta = torch.linspace(beta_start, beta_end, num_timesteps)
+        self.alpha = 1 - self.beta
+        self.alpha_bar = torch.cumprod(self.alpha, dim=0)
 
-        # Improved network architecture with residual connections
-        self.net = nn.ModuleList([
-            nn.Sequential(
-                nn.Linear(3 + hidden_dim * 2, hidden_dim),
-                nn.LayerNorm(hidden_dim),
-                nn.SiLU(),
-                nn.Dropout(0.1)
-            ),
-            nn.Sequential(
-                nn.Linear(hidden_dim, hidden_dim),
-                nn.LayerNorm(hidden_dim),
-                nn.SiLU(),
-                nn.Dropout(0.1)
-            ),
-            nn.Sequential(
-                nn.Linear(hidden_dim, hidden_dim),
-                nn.LayerNorm(hidden_dim),
-                nn.SiLU(),
-                nn.Dropout(0.1)
-            )
-        ])
+        # Add sqrt of alpha and beta terms for efficiency
+        self.sqrt_alpha = torch.sqrt(self.alpha)
+        self.sqrt_one_minus_alpha_bar = torch.sqrt(1 - self.alpha_bar)
 
-        self.final_layer = nn.Linear(hidden_dim, 3)
+        self.model = DiffusionModel(num_vertices=num_vertices)
 
-    def forward(self, x, point_cloud, t):
-        # Normalize input point cloud and vertices
-        point_cloud = F.normalize(point_cloud, p=2, dim=-1)
-        x = F.normalize(x, p=2, dim=-1)
+    def add_noise(self, x, t):
+        """
+        Add noise to the input vertices based on the diffusion timestep.
 
-        # Encode point cloud
-        point_cloud_features = self.encoder(point_cloud)
+        Args:
+            x (torch.Tensor): Input vertices of shape (batch_size, num_vertices, 3)
+            t (torch.Tensor): Timesteps of shape (batch_size,)
 
-        # Time embedding
-        t_emb = self.time_embed(t)
+        Returns:
+            tuple: (noisy_vertices, noise) tensors
+        """
+        alpha_bar_t = self.alpha_bar[t].view(-1, 1, 1)
+        noise = torch.randn_like(x)
 
-        # Combine features
-        batch_size = x.shape[0]
-        actual_num_vertices = x.shape[1]
+        # Calculate noisy vertices using the pre-computed sqrt terms
+        noisy_x = torch.sqrt(alpha_bar_t) * x + \
+                  torch.sqrt(1 - alpha_bar_t) * noise
 
-        point_cloud_features = point_cloud_features.unsqueeze(1).expand(-1, actual_num_vertices, -1)
-        t_emb = t_emb.unsqueeze(1).expand(-1, actual_num_vertices, -1)
+        return noisy_x, noise
 
-        # Input preparation
-        h = torch.cat([x, point_cloud_features, t_emb], dim=-1)
+    def training_step(self, vertices, point_cloud):
+        batch_size = vertices.shape[0]
+        t = torch.randint(0, self.num_timesteps, (batch_size,))
 
-        # Residual network with skip connections
-        for layer in self.net:
-            h_prev = h
-            h = layer(h)
-            if h.shape == h_prev.shape:  # Add skip connection if shapes match
-                h = h + h_prev
+        # Normalize vertices
+        vertices = F.normalize(vertices, p=2, dim=-1)
 
-        # Final prediction
-        noise_pred = self.final_layer(h)
-        return noise_pred
+        # Add noise to vertices
+        noisy_vertices, noise = self.add_noise(vertices, t)
+
+        # Predict noise
+        noise_pred = self.model(noisy_vertices, point_cloud, t.float().unsqueeze(-1))
+
+        # Weighted MSE loss for noise prediction
+        noise_weight = (1 - self.alpha_bar[t]).view(-1, 1, 1)
+        noise_loss = F.mse_loss(noise_pred * noise_weight, noise * noise_weight)
+
+        # Improved Chamfer distance calculation
+        with torch.no_grad():
+            alpha_bar_t = self.alpha_bar[t].view(-1, 1, 1)
+            denoised_vertices = (noisy_vertices - torch.sqrt(1 - alpha_bar_t) * noise_pred) / torch.sqrt(alpha_bar_t)
+            chamfer_loss, _ = chamfer_distance(denoised_vertices, vertices)
+
+        # Dynamic loss weighting
+        normalized_chamfer_loss = chamfer_loss / vertices.shape[1]
+        chamfer_weight = min(0.1, 1.0 / (1.0 + normalized_chamfer_loss.item()))
+
+        total_loss = noise_loss + chamfer_weight * normalized_chamfer_loss
+
+        return {
+            'total_loss': total_loss,
+            'noise_loss': noise_loss,
+            'chamfer_loss': chamfer_loss,
+            'chamfer_weight': chamfer_weight
+        }
 
 
 class VertexExtractionDiffusion:
