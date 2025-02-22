@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
     # 데이터셋 로드
     dataset = PointCloudDataset(pointcloud_dir, vertices_dir)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, collate_fn=pad_collate_fn)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=3, shuffle=True, collate_fn=pad_collate_fn)
 
     # 데이터 확인
     for point_cloud, vertices, mask in dataloader:
