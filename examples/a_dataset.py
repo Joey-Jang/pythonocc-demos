@@ -95,16 +95,17 @@ def pad_collate_fn(batch):
     return point_clouds, padded_vertices, mask
 
 
-class PointCloudOnlyDataset(torch.utils.data.Dataset):
+class PointCloudMaskDataset(torch.utils.data.Dataset):
     """
-    단일 point cloud (.npy) 파일들을 읽어
-    (N,3) 형태로 로드 후, FPS로 num_points 개만 샘플링.
-    반환: torch.Tensor, shape=(num_points,3)
+    (N,3) point cloud + mask(=1) => (N,4)
+    FPS로 num_points만큼 샘플링.
+    최종 shape: (num_points,4)
     """
 
-    def __init__(self, pointcloud_dir, num_points=1024):
+    def __init__(self, pointcloud_dir, num_points=1024, default_mask=1.0):
         self.pointcloud_dir = pointcloud_dir
         self.num_points = num_points
+        self.default_mask = default_mask  # ex) 1.0
         self.file_names = sorted(
             f for f in os.listdir(pointcloud_dir) if f.endswith('.npy')
         )
@@ -116,20 +117,24 @@ class PointCloudOnlyDataset(torch.utils.data.Dataset):
         file_name = self.file_names[idx]
         pcd_path = os.path.join(self.pointcloud_dir, file_name)
 
-        # 포인트 클라우드 로드 (N,3)
-        point_cloud = np.load(pcd_path)  # shape=(N,3)
+        # (N,3)
+        pc_3d = np.load(pcd_path)  # shape=(N,3)
 
-        # FPS로 샘플링
-        if len(point_cloud) > self.num_points:
-            point_cloud = farthest_point_sampling(point_cloud, self.num_points)
-        else:
-            # 만약 N < num_points인 경우, 그대로 사용 or 랜덤 중복 샘플링(원하면)
-            pass
+        # FPS
+        if len(pc_3d) > self.num_points:
+            pc_3d = farthest_point_sampling(pc_3d, self.num_points)
+        # else: N<num_points, 그냥 둠
 
-        # 텐서 변환
-        point_cloud = torch.tensor(point_cloud, dtype=torch.float32)  # (num_points,3)
+        # 마스크 채널 추가
+        # shape=(N,1)
+        mask_col = np.ones((pc_3d.shape[0], 1), dtype=np.float32) * self.default_mask
 
-        return point_cloud
+        # concat => (N,4)
+        pc_4d = np.concatenate([pc_3d, mask_col], axis=-1)  # (N,4)
+
+        # tensor
+        pc_4d = torch.tensor(pc_4d, dtype=torch.float32)
+        return pc_4d
 
 
 if __name__ == '__main__':
