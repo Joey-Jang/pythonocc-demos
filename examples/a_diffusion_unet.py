@@ -4,8 +4,8 @@ import torch.nn.functional as F
 import os
 from torch.utils.data import DataLoader
 
-from examples.a_dataset import PointCloudDataset, custom_collate_fn
-from examples.a_diffusion import Diffusion
+from a_dataset import PointCloudDataset, custom_collate_fn
+from a_diffusion import Diffusion
 
 
 class DiffusionUNet(nn.Module):
