@@ -269,13 +269,13 @@ def load_checkpoint(model, optimizer,
 if __name__ == "__main__":
     # Initialize model
     diffusion = VertexExtractionDiffusion(num_vertices=5000)
-    # optimizer = torch.optim.Adam(diffusion.model.parameters(), lr=1e-4)
-    optimizer = torch.optim.AdamW(
-        diffusion.model.parameters(),
-        lr=5e-4,  # 초기 learning rate 감소
-        weight_decay=0.1,  # weight decay 증가
-        betas=(0.9, 0.999)
-    )
+    optimizer = torch.optim.Adam(diffusion.model.parameters(), lr=1e-4)
+    # optimizer = torch.optim.AdamW(
+    #     diffusion.model.parameters(),
+    #     lr=5e-4,  # 초기 learning rate 감소
+    #     weight_decay=0.1,  # weight decay 증가
+    #     betas=(0.9, 0.999)
+    # )
 
     # Assuming you have a DataLoader with (vertices, point_cloud) pairs
     # 데이터 디렉토리 설정
