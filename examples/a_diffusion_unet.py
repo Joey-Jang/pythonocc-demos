@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import os
 from torch.utils.data import DataLoader
 
-from a_dataset import PointCloudDataset, custom_collate_fn
+from a_dataset import PointCloudDataset, custom_collate_fn, pad_collate_fn
 from a_diffusion import Diffusion
 
 
@@ -104,7 +104,7 @@ if __name__ == "__main__":
 
     # Define dataset and dataloader
     dataset = PointCloudDataset(pointcloud_dir="pointclouds", vertices_dir="vertices")
-    dataloader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=custom_collate_fn)
+    dataloader = DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=pad_collate_fn)
 
     # Initialize model and optimizer
     model = DiffusionUNet()

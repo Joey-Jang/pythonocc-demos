@@ -66,17 +66,47 @@ def custom_collate_fn(batch):
     return point_clouds, vertices
 
 
-# 데이터셋 경로 설정
-pointcloud_dir = "pointclouds"
-vertices_dir = "vertices"
+def pad_collate_fn(batch):
+    """
+    Custom collate function to pad variable-length vertices tensors.
+    """
+    point_clouds, vertices_list = zip(*batch)  # Unpack batch
 
-# 데이터셋 로드
-dataset = PointCloudDataset(pointcloud_dir, vertices_dir)
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=custom_collate_fn)
+    # Convert point clouds to tensor (same size by default)
+    point_clouds = torch.stack(point_clouds)  # (Batch, 1024, 3)
 
-# 데이터 확인
-for point_cloud, vertices in dataloader:
-    print(f"Point Cloud Shape: {point_cloud.shape}")  # (Batch, 1024, 3)
-    print(f"Vertices Batch Size: {len(vertices)}")  # 리스트 길이 확인
-    print(f"First Sample Vertices Shape: {vertices[0].shape}")  # 각 샘플의 정점 개수 확인
-    break
+    # Find max number of vertices in the batch
+    max_vertices = max(v.shape[0] for v in vertices_list)
+
+    # Pad vertices to the max size in the batch
+    padded_vertices = []
+    mask = []
+    for v in vertices_list:
+        pad_size = max_vertices - v.shape[0]
+        padded = torch.cat([v, torch.zeros((pad_size, 3))], dim=0)  # Pad with zeros
+        padded_vertices.append(padded)
+
+        mask.append(torch.cat([torch.ones(v.shape[0]), torch.zeros(pad_size)]))  # Mask for valid points
+
+    # Convert lists to tensors
+    padded_vertices = torch.stack(padded_vertices)  # (Batch, max_vertices, 3)
+    mask = torch.stack(mask)  # (Batch, max_vertices)
+
+    return point_clouds, padded_vertices, mask
+
+
+if __name__ == '__main__':
+    # 데이터셋 경로 설정
+    pointcloud_dir = "pointclouds"
+    vertices_dir = "vertices"
+
+    # 데이터셋 로드
+    dataset = PointCloudDataset(pointcloud_dir, vertices_dir)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=4, shuffle=True, collate_fn=pad_collate_fn)
+
+    # 데이터 확인
+    for point_cloud, vertices in dataloader:
+        print(f"Point Cloud Shape: {point_cloud.shape}")  # (Batch, 1024, 3)
+        print(f"Vertices Batch Size: {len(vertices)}")  # 리스트 길이 확인
+        print(f"First Sample Vertices Shape: {vertices[0].shape}")  # 각 샘플의 정점 개수 확인
+        break
