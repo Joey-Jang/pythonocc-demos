@@ -13,8 +13,11 @@ class PointCloudEncoder(nn.Module):
     def __init__(self, input_dim=3, hidden_dim=256):
         super().__init__()
         self.conv1 = nn.Conv1d(input_dim, hidden_dim, 1)
+        self.bn1 = nn.BatchNorm1d(hidden_dim)  # BatchNorm 추가
         self.conv2 = nn.Conv1d(hidden_dim, hidden_dim, 1)
+        self.bn2 = nn.BatchNorm1d(hidden_dim)
         self.conv3 = nn.Conv1d(hidden_dim, hidden_dim, 1)
+        self.bn3 = nn.BatchNorm1d(hidden_dim)
 
     def forward(self, x):
         # x: (batch_size, num_points, 3)
@@ -39,24 +42,25 @@ class DiffusionModel(nn.Module):
             nn.Linear(hidden_dim, hidden_dim)
         )
 
-        self.net = nn.Sequential(
-            nn.Linear(3 + hidden_dim * 2, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, 3)
-        )
         # self.net = nn.Sequential(
         #     nn.Linear(3 + hidden_dim * 2, hidden_dim),
-        #     nn.LayerNorm(hidden_dim),
         #     nn.ReLU(),
         #     nn.Linear(hidden_dim, hidden_dim),
-        #     nn.LayerNorm(hidden_dim),
         #     nn.ReLU(),
-        #     nn.Linear(hidden_dim, hidden_dim // 2),
-        #     nn.ReLU(),
-        #     nn.Linear(hidden_dim // 2, 3)
+        #     nn.Linear(hidden_dim, 3)
         # )
+        self.net = nn.Sequential(
+            nn.Linear(3 + hidden_dim * 2, hidden_dim),
+            nn.LayerNorm(hidden_dim),  # 정규화 층 추가
+            nn.SiLU(),  # ReLU 대신 SiLU 사용
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.LayerNorm(hidden_dim // 2),
+            nn.SiLU(),
+            nn.Linear(hidden_dim // 2, 3)
+        )
 
     def forward(self, x, point_cloud, t):
         # x: noisy vertices (batch_size, num_vertices, 3)
@@ -121,7 +125,7 @@ class VertexExtractionDiffusion:
         chamfer_loss, _ = chamfer_distance(denoised_vertices, vertices)
 
         normalized_chamfer_loss = chamfer_loss / vertices.shape[1]  # 정점 수로 정규화
-        total_loss = noise_loss + 1e-3 * normalized_chamfer_loss  # 가중치 상향 조정
+        total_loss = noise_loss + 0.1 * normalized_chamfer_loss  # 가중치 상향 조정
 
         return {
             'total_loss': total_loss,
@@ -166,13 +170,16 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
     # 체크포인트 디렉토리 생성
     os.makedirs(checkpoint_dir, exist_ok=True)
 
-    # Learning rate scheduler 추가
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    # OneCycleLR 스케줄러 설정
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(
         optimizer,
-        mode='min',
-        factor=0.5,
-        patience=3,  # patience 줄임
-        min_lr=1e-6  # 최소 learning rate 설정
+        max_lr=1e-3,  # 최대 learning rate
+        steps_per_epoch=len(train_loader),
+        epochs=num_epochs,
+        pct_start=0.3,  # warmup이 전체 학습의 30%를 차지
+        div_factor=25,  # 초기 learning rate = max_lr/25
+        final_div_factor=1e4,  # 최종 learning rate = max_lr/10000
+        anneal_strategy='cos'  # cosine annealing 사용
     )
 
     best_loss = float('inf')
@@ -198,9 +205,10 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
             total_loss.backward()
 
             # Gradient clipping 추가
-            torch.nn.utils.clip_grad_norm_(model.model.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(model.model.parameters(), max_norm=0.5)
 
             optimizer.step()
+            scheduler.step()
 
             epoch_losses.append(total_loss.item())
 
@@ -208,20 +216,11 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
                 print(f"Epoch {epoch}, Batch {batch_idx}, "
                       f"Total Loss: {losses['total_loss']:.4f}, "
                       f"Noise Loss: {losses['noise_loss']:.4f}, "
-                      f"Chamfer Loss: {losses['chamfer_loss']:.4f}")
+                      f"Chamfer Loss: {losses['chamfer_loss']:.4f}, "
+                      f"Learning Rate: {optimizer.param_groups[0]['lr']:.2e}")
 
         # 에포크 평균 손실 계산
         avg_loss = sum(epoch_losses) / len(epoch_losses)
-
-        # Learning rate 조정 전의 값
-        old_lr = optimizer.param_groups[0]['lr']
-
-        scheduler.step(avg_loss)
-
-        # Learning rate가 변경되었는지 확인
-        new_lr = optimizer.param_groups[0]['lr']
-        if new_lr != old_lr:
-            print(f"Learning rate changed from {old_lr} to {new_lr}")
 
         # 모델 저장
         checkpoint = {
@@ -264,7 +263,8 @@ def load_checkpoint(model, optimizer,
 if __name__ == "__main__":
     # Initialize model
     diffusion = VertexExtractionDiffusion(num_vertices=5000)
-    optimizer = torch.optim.Adam(diffusion.model.parameters(), lr=1e-4)
+    # optimizer = torch.optim.Adam(diffusion.model.parameters(), lr=1e-4)
+    optimizer = torch.optim.AdamW(diffusion.model.parameters(), lr=1e-4, weight_decay=0.01)
 
     # Assuming you have a DataLoader with (vertices, point_cloud) pairs
     # 데이터 디렉토리 설정
