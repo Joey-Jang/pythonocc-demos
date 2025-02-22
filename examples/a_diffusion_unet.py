@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
     # Define dataset and dataloader
     dataset = PointCloudDataset(pointcloud_dir="pointclouds", vertices_dir="vertices")
-    dataloader = DataLoader(dataset, batch_size=1, shuffle=True, collate_fn=pad_collate_fn)
+    dataloader = DataLoader(dataset, batch_size=3, shuffle=True, collate_fn=pad_collate_fn)
 
     # Initialize model and optimizer
     model = DiffusionUNet()
