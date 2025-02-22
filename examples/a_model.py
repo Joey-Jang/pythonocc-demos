@@ -120,7 +120,8 @@ class VertexExtractionDiffusion:
         denoised_vertices = (noisy_vertices - torch.sqrt(1 - alpha_bar_t) * noise_pred) / torch.sqrt(alpha_bar_t)
         chamfer_loss, _ = chamfer_distance(denoised_vertices, vertices)
 
-        total_loss = noise_loss + 1e-6 * chamfer_loss
+        normalized_chamfer_loss = chamfer_loss / vertices.shape[1]  # 정점 수로 정규화
+        total_loss = noise_loss + 1e-3 * normalized_chamfer_loss  # 가중치 상향 조정
 
         return {
             'total_loss': total_loss,
