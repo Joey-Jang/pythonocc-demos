@@ -95,6 +95,43 @@ def pad_collate_fn(batch):
     return point_clouds, padded_vertices, mask
 
 
+class PointCloudOnlyDataset(torch.utils.data.Dataset):
+    """
+    단일 point cloud (.npy) 파일들을 읽어
+    (N,3) 형태로 로드 후, FPS로 num_points 개만 샘플링.
+    반환: torch.Tensor, shape=(num_points,3)
+    """
+
+    def __init__(self, pointcloud_dir, num_points=1024):
+        self.pointcloud_dir = pointcloud_dir
+        self.num_points = num_points
+        self.file_names = sorted(
+            f for f in os.listdir(pointcloud_dir) if f.endswith('.npy')
+        )
+
+    def __len__(self):
+        return len(self.file_names)
+
+    def __getitem__(self, idx):
+        file_name = self.file_names[idx]
+        pcd_path = os.path.join(self.pointcloud_dir, file_name)
+
+        # 포인트 클라우드 로드 (N,3)
+        point_cloud = np.load(pcd_path)  # shape=(N,3)
+
+        # FPS로 샘플링
+        if len(point_cloud) > self.num_points:
+            point_cloud = farthest_point_sampling(point_cloud, self.num_points)
+        else:
+            # 만약 N < num_points인 경우, 그대로 사용 or 랜덤 중복 샘플링(원하면)
+            pass
+
+        # 텐서 변환
+        point_cloud = torch.tensor(point_cloud, dtype=torch.float32)  # (num_points,3)
+
+        return point_cloud
+
+
 if __name__ == '__main__':
     # 데이터셋 경로 설정
     pointcloud_dir = "pointclouds"
