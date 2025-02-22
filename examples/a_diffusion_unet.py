@@ -45,18 +45,15 @@ class DiffusionUNet(nn.Module):
 
 # Define loss function
 def chamfer_distance(x, y, mask):
-    """ Compute Chamfer Distance between two point sets with mask """
+    """ Compute Chamfer Distance between two point sets """
     x_expand = x.unsqueeze(1)  # (B, 1, N, 3)
     y_expand = y.unsqueeze(2)  # (B, N, 1, 3)
 
-    dist = torch.norm(x_expand - y_expand, dim=-1)
+    dist = torch.norm(x_expand - y_expand, dim=-1)  # Compute pairwise distance
     min_dist_x = torch.min(dist, dim=2)[0]
-    min_dist_y = torch.min(dist, dim=1)[0]
+    min_dist_y = torch.min(dist, dim=1)[0] * mask
 
-    min_dist_y = min_dist_y * mask  # 🔹 패딩 부분 제외
-    loss = (min_dist_x.mean() + min_dist_y.sum() / mask.sum())  # 🔹 유효한 포인트만 고려
-
-    return loss
+    return min_dist_x.mean() + min_dist_y.mean()
 
 
 # Define training loop
