@@ -51,14 +51,19 @@ class DiffusionModel(nn.Module):
         # )
         self.net = nn.Sequential(
             nn.Linear(3 + hidden_dim * 2, hidden_dim),
-            nn.LayerNorm(hidden_dim),  # 정규화 층 추가
-            nn.SiLU(),  # ReLU 대신 SiLU 사용
+            nn.LayerNorm(hidden_dim),
+            nn.SiLU(),
+            nn.Dropout(0.1),  # Dropout 추가
+
             nn.Linear(hidden_dim, hidden_dim),
             nn.LayerNorm(hidden_dim),
             nn.SiLU(),
+            nn.Dropout(0.1),
+
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.LayerNorm(hidden_dim // 2),
             nn.SiLU(),
+
             nn.Linear(hidden_dim // 2, 3)
         )
 
@@ -125,7 +130,7 @@ class VertexExtractionDiffusion:
         chamfer_loss, _ = chamfer_distance(denoised_vertices, vertices)
 
         normalized_chamfer_loss = chamfer_loss / vertices.shape[1]  # 정점 수로 정규화
-        total_loss = noise_loss + 0.1 * normalized_chamfer_loss  # 가중치 상향 조정
+        total_loss = noise_loss + 0.5 * normalized_chamfer_loss  # 가중치 상향 조정
 
         return {
             'total_loss': total_loss,
@@ -173,13 +178,13 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
     # OneCycleLR 스케줄러 설정
     scheduler = torch.optim.lr_scheduler.OneCycleLR(
         optimizer,
-        max_lr=1e-3,  # 최대 learning rate
+        max_lr=5e-4,  # 최대 learning rate 감소
         steps_per_epoch=len(train_loader),
         epochs=num_epochs,
-        pct_start=0.3,  # warmup이 전체 학습의 30%를 차지
-        div_factor=25,  # 초기 learning rate = max_lr/25
-        final_div_factor=1e4,  # 최종 learning rate = max_lr/10000
-        anneal_strategy='cos'  # cosine annealing 사용
+        pct_start=0.2,  # warmup 비율 감소
+        div_factor=10,  # 초기 lr = max_lr/10
+        final_div_factor=1e3,  # 최종 lr = max_lr/1000
+        anneal_strategy='cos'
     )
 
     best_loss = float('inf')
@@ -205,7 +210,7 @@ def train_model(model, train_loader, optimizer, num_epochs=100, checkpoint_dir='
             total_loss.backward()
 
             # Gradient clipping 추가
-            torch.nn.utils.clip_grad_norm_(model.model.parameters(), max_norm=0.5)
+            torch.nn.utils.clip_grad_norm_(model.model.parameters(), max_norm=0.1)
 
             optimizer.step()
             scheduler.step()
@@ -264,7 +269,12 @@ if __name__ == "__main__":
     # Initialize model
     diffusion = VertexExtractionDiffusion(num_vertices=5000)
     # optimizer = torch.optim.Adam(diffusion.model.parameters(), lr=1e-4)
-    optimizer = torch.optim.AdamW(diffusion.model.parameters(), lr=1e-4, weight_decay=0.01)
+    optimizer = torch.optim.AdamW(
+        diffusion.model.parameters(),
+        lr=5e-5,  # 초기 learning rate 감소
+        weight_decay=0.1,  # weight decay 증가
+        betas=(0.9, 0.999)
+    )
 
     # Assuming you have a DataLoader with (vertices, point_cloud) pairs
     # 데이터 디렉토리 설정
@@ -275,7 +285,7 @@ if __name__ == "__main__":
     train_loader = create_dataloader(
         vertex_dir=vertex_dir,
         pointcloud_dir=pointcloud_dir,
-        batch_size=32,
+        batch_size=3,
         num_workers=1
     )
 
